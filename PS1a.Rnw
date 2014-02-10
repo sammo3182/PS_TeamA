@@ -1,5 +1,3 @@
-% A renew try
-
 \documentclass[12pt]{article}
 \usepackage{fullpage}
 

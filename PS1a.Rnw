@@ -28,16 +28,16 @@ data.key
 
 
 <<label=Answer1>>=
-range(mex$PRIfeel) # for range
+range(mex$PRIfeel) # Displays the range
 
-mean(mex$PRIfeel) # for mean
-median(mex$PRIfeel) #for median
+mean(mex$PRIfeel) # Displays the mean
+median(mex$PRIfeel) #Displays the median
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
 Mode(mex$PRIfeel)
-#for mode
+#Displays the mode
 @
 
 
@@ -50,7 +50,7 @@ summary(m1)
 plot(m1)
 @
 
-From this simple regression, we see a positive significant change caused by ideology on PRIfeel. In terms of that the ideology variable is measured by a ten point scale with 0 as the extreme left and 10 as the extreme right, the positive effect implies that every one unit increase in ideology index towards right, there will be .33 unit changes in the index of feeling of PRI of respondents. As this empirics significant at the .0001 level, it offers evidence to reject null hypothesis that people who leaned more to the right would NOT hold more favorable views of this authoritarian party, and, therefore, supports the hypothesis of interest, REGARDLESS OF THE MODEL SPECIFICATION PROBLEMS.
+From this simple regression, we see a positive significant change caused by ideology on PRIfeel. The ideology variable is measured by a ten point scale with 0 as the extreme left and 10 as the extreme right. The positive effect implies that for every one unit increase in ideology index towards right, there will be a .33 unit change in the feeling index of PRI respondents. As this empirical output is significant at the .0001 level, it offers evidence to reject null hypothesis that people who leaned more to the right would NOT hold more favorable views of the authoritarian party, and therefore supports the hypothesis of interest, REGARDLESS OF THE MODEL SPECIFICATION PROBLEMS.
 
 \item Suppose we hypothesize that respondents' feelings about the PRI were also a function of their assessments of how well the PRI had governed lately as well as their personal characteristics.  Is our ideology hypothesis still supported when these factors are taken into account?  \\
 
@@ -92,38 +92,36 @@ summary(m2)
 library(car)
 ##Residuals
 residualPlots(m2)
-residualPlots(m2,~1,fitted=T)  #'cause categorical variables, no surprise
-#                               there're parallel shapes, but generally, 
-#                               residual looks ok.
+residualPlots(m2,~1,fitted=T)  #Since these are categorical variables, there is no surprise that 
+#                               they are all parallel shapes. Generally, these residuals look 
+#                               okay.
 marginalModelPlot(m2) #If the model fits the data well, then the two 
-#                      smooths should match on each of the marginal model 
-#                      plots. So, we can see the data and model lines 
+#                      lines should match on each of the marginal model 
+#                      plots. We can see that the data and model lines 
 #                      generally match, which means the model performs well.
 
 ##Outliers
-influenceIndexPlot(m2) # Certain data points has a relatively large Cook's
+influenceIndexPlot(m2) # Certain data points have a relatively large Cook's
 #                        distance, but from studentized residuals, they 
 #                        should not affect the regression too much.
 
 ##Nonconsistant error
 spreadLevelPlot(m2)
-ncvTest(m2)   # Nonsignificant result. We should be fine with the 
-#               consistancy of the residual.
+ncvTest(m2)   # This is an insignificant result. The consistency of the residual should not cause #               any problems.
 
 ##Heteroscedasticity tests
 library(sandwich)
 library(lmtest)
-bptest(m2)                    # Significant result shows a 
-#                               heteroscedasticity existing.
-coeftest(m2, vcov=vcovHC(m2)) # Robust se.
+bptest(m2)                    # The result of this test shows that there is a significant issues #                               with heteroscedasticity.  
+coeftest(m2, vcov=vcovHC(m2)) # Robust standard error.
 
 ##multicollinearity 
 vif=vif(lm(PRIfeel~rightide+econpers.0+econnat.0+corrupt.0+crime.0+female
            +ses.0+churchatt.0, data=mex))
-mean(vif)   # A low vif, shows litter necessary concern about 
-#             multicollinearity
-sqrt(vif)   # confidence intervals increased by a factor of root VIF
-#             no idea why doing this but copying from the class script.
+mean(vif)   # A low vif shows that there is little need to be concerned about 
+#             multicollinearity.
+sqrt(vif)   # The confidence intervals increased by a factor of root VIF.  Not exactly sure why 
+#             this is the result, but the script was copied from class script.
 @
 
 With more variables involved, the effect of ideology is still robust, which means that ideology hypothesis still supported when these factors are taken into account.
@@ -131,7 +129,7 @@ With more variables involved, the effect of ideology is still robust, which mean
 \item Based on this model, which variable had the strongest estimated effect on respondents' feelings towards the PRI?  \\   
 
 <<label=Answer4>>=
-#Which dep var should we use here ?? PRIfeel or prefPRI??
+#Which dependent variable should we use here ?? PRIfeel or prefPRI??
 ##Gelman and Hill (2007,56) Standardizing by subtracting the mean 
 # and dividing by 2 sd.
 z.rightide=(mex$rightide-mean(mex$rightide))/(2*sd(mex$rightide))

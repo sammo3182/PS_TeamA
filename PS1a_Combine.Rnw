@@ -129,10 +129,24 @@ With more variables involved, the effect of ideology is still robust, which mean
 \item Based on this model, which variable had the strongest estimated effect on respondents' feelings towards the PRI?  \\   
 
 <<label=Answer4>>=
+#Which dependent variable should we use here ?? PRIfeel or prefPRI??
+##Gelman and Hill (2007,56) Standardizing by subtracting the mean 
+# and dividing by 2 sd.
+z.rightide=(mex$rightide-mean(mex$rightide))/(2*sd(mex$rightide))
+z.econpers.0=(mex$econpers.0-mean(mex$econpers.0))/(2*sd(mex$econpers.0))
+z.econnat.0=(mex$econnat.0-mean(mex$econnat.0))/(2*sd(mex$econnat.0))
+z.corrupt.0=(mex$corrupt.0-mean(mex$corrupt.0))/(2*sd(mex$corrupt.0))
+z.crime.0=(mex$crime.0-mean(mex$crime.0))/(2*sd(mex$crime.0))
+z.ses.0=(mex$ses.0-mean(mex$ses.0))/(2*sd(mex$ses.0))
+z.female=(mex$female-mean(mex$female))/(2*sd(mex$female))
+z.churchatt.0=(mex$churchatt.0-mean(mex$churchatt.0))/(2*sd(mex$churchatt.0))
 
-
+m3=lm(PRIfeel~z.rightide+z.econpers.0+z.econnat.0+z.corrupt.0+z.crime.0
+      +z.female+z.ses.0+z.churchatt.0, data=mex)
+summary(m3)
+coeftest(m3, vcov=vcovHC(m3))
 @
 
-
+From the standardized result we see that rightide has the largest magtitude of effect on respondents' feelings towards the PRI.
 \end{enumerate}
 \end{document}

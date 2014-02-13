@@ -15,7 +15,7 @@ The \emph{Partido Revolucionario Institucional} (PRI) maintained authoritarian r
 <<label=Setup>>=
 # Setup
 require(foreign)
-mex <- read.dta("C:/Users/Jill/Desktop/mex2000.dta")
+mex <- read.dta("mex2000.dta")
 var.labels <- attr(mex,"var.labels")
 data.key <- data.frame(var.name=names(mex),var.labels)
 data.key
@@ -144,12 +144,10 @@ m3=lm(PRIfeel~z.rightide+z.econpers.0+z.econnat.0+z.corrupt.0+z.crime.0
 summary(m3)
 coeftest(m3, vcov=vcovHC(m3))
 
+#The same way but with more short codes
 mex.range.2sd <-apply(mex[,c(6,14:19)], 2, function(x) 2*sd(x))
 sd2.effects<-mex.range.2sd*m2$coef[2:8]
 sd2.effects
-#An alternative way to check the substantive effects of the explanatory variables
-#The results support the previous results that rightide has the greatest substantive effect.
-
 @
 
 From the standardized result we see that rightide has the largest magtitude of effect on respondents' feelings towards the PRI.

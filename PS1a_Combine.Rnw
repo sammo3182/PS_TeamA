@@ -47,7 +47,6 @@ Mode(mex$PRIfeel)
 table(mex$rightide) #check data
 m1<-lm(PRIfeel~rightide, data=mex)
 summary(m1)
-plot(m1)
 @
 
 From this simple regression, we see a positive significant change caused by ideology on PRIfeel. The ideology variable is measured by a ten point scale with 0 as the extreme left and 10 as the extreme right. The positive effect implies that for every one unit increase in ideology index towards right, there will be a .33 unit change in the feeling index of PRI respondents. As this empirical output is significant at the .0001 level, it offers evidence to reject null hypothesis that people who leaned more to the right would NOT hold more favorable views of the authoritarian party, and therefore supports the hypothesis of interest, REGARDLESS OF THE MODEL SPECIFICATION PROBLEMS.
@@ -129,7 +128,6 @@ With more variables involved, the effect of ideology is still robust, which mean
 \item Based on this model, which variable had the strongest estimated effect on respondents' feelings towards the PRI?  \\   
 
 <<label=Answer4>>=
-#Which dependent variable should we use here ?? PRIfeel or prefPRI??
 ##Gelman and Hill (2007,56) Standardizing by subtracting the mean 
 # and dividing by 2 sd.
 z.rightide=(mex$rightide-mean(mex$rightide))/(2*sd(mex$rightide))

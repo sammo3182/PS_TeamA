@@ -106,12 +106,14 @@ influenceIndexPlot(m2) # Certain data points have a relatively large Cook's
 
 ##Nonconsistant error
 spreadLevelPlot(m2)
-ncvTest(m2)   # This is an insignificant result. The consistency of the residual should not cause #               any problems.
+ncvTest(m2)   # This is an insignificant result. The consistency of the residual should not cause 
+#               any problems.
 
 ##Heteroscedasticity tests
 library(sandwich)
 library(lmtest)
-bptest(m2)                    # The result of this test shows that there is a significant issues #                               with heteroscedasticity.  
+bptest(m2)                    # The result of this test shows that there is a significant issue 
+#                               with heteroscedasticity.  
 coeftest(m2, vcov=vcovHC(m2)) # Robust standard error.
 
 ##multicollinearity 

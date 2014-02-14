@@ -150,6 +150,7 @@ coeftest(m3, vcov=vcovHC(m3))
 mex.range.2sd <-apply(mex[,c(6,14:19)], 2, function(x) 2*sd(x))
 sd2.effects<-mex.range.2sd*m2$coef[2:8]
 sd2.effects
+max(abs(sd2.effects))   # Find the largest effect by codes.
 @
 
 From the standardized result we see that rightide has the largest magtitude of effect on respondents' feelings towards the PRI.

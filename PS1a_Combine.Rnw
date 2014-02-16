@@ -86,6 +86,9 @@ table(mex$churchatt.0)
 m2<-lm(PRIfeel~rightide+econpers.0+econnat.0+corrupt.0+crime.0+female+ses.0
        +churchatt.0, data=mex)
 summary(m2)
+m2.1<-lm(PRIfeel~rightide+econpers+econnat+corrupt+crime+female+ses
+       +churchatt, data=mex)
+summary(m2.1)  #There's no difference in terms of coefficients except for the intercept. Therefore, the #              rescaling is actually unnecessary.
 
 ##Diagnosis
 library(car)

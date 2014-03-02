@@ -1,0 +1,192 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\pagestyle{empty}
+
+\begin{center}
+{\Large \textbf{POLS 500c: Problem Set \# 3}}
+\end{center}
+
+The dataset \texttt{Obama.dta} is a subset of the 2008 American National Election Survey.  We will use it to examine attitudes toward Barack Obama, using the feeling thermometer \texttt{obama}.
+
+<<label=Setup>>=
+# Setup
+require(foreign)
+obama <- read.dta("Obama.dta")
+var.labels <- attr(obama,"var.labels")
+data.key <- data.frame(var.name=names(obama),var.labels)
+data.key
+@
+
+\begin{enumerate}
+\item Suppose we hypothesize that a respondent's income affects her or his attitudes toward Obama, that those with higher incomes will express cooler feelings toward him.  Controlling for age, education, gender, race, and partisanship, is this hypothesis supported?  How do you know?
+
+<<label=Answer1>>=
+# Data management
+table(obama$obama)
+table(obama$income) #There's a gap from around 140 to 250
+table(obama$age)
+table(obama$educ)
+table(obama$female)
+table(obama$black)
+table(obama$dem)
+table(obama$rep)
+cor.test(obama$dem, obama$rep, method=c("pearson", "kendall", "spearman")) 
+#There is a significant correlation between these two variables, which indicates that there may be a potential problem of multicollinearity.  This is an issue that we will have to keep in mind as we continue analyzing this data set.
+
+#An althernative method for partisanship could be:
+#obama$party<-ifelse(obama$dem==1, 1, ifelse(obama$rep==1, 2, 0))
+#table(obama$party)  # It looks as though in this sample the republican variable is only half as large as the democrat variable.  I am uncertain as to whether this accurately reflects the reality, which indicates a potential issue with validity.
+
+#Simple OLS
+m1<-lm(obama~income+age+educ+female+black+dem+rep, data=obama)
+summary(m1)
+
+require(car)
+vif=vif(m1)
+mean(vif)   # VIF=1.186<<10 (e.g., Hair, Anderson, Tatham, & Black, 1995; Kennedy, 1992; Marquardt, 1970; Neter, Wasserman, & Kutner, 1989). This indicates that there is not actually a problem with multicollinearity.
+
+#Diagnosis
+residualPlots(m1)
+ncvTest(m1)# This is an significant result, with the consistency of the residuals causing some potential problems.
+library(sandwich)
+library(lmtest)
+bptest(m1) # The result of this test shows that there is a significant issue with heteroscedasticity.
+coeftest(m1, vcov=vcovHC(m1)) # Robust standard error.
+@
+<<label=f11, echo=FALSE, results=tex, fig = TRUE, include=F>>=
+residualPlots(m1,~1,fitted=T) #looks normally weird
+@
+<<label=f12, echo=FALSE, results=tex, fig = TRUE, include=F>>=
+marginalModelPlot(m1)  #There is a somewhat obvious difference between the expected and observed variables.
+@
+
+\begin{figure}[htbp] 
+  \begin{center}
+    \includegraphics[width=\textwidth]{PS2-f11.pdf}
+  \end{center}
+  \caption{Residual vs. Fitted Plot for Model 1}
+  \label{f:rf}
+\end{figure}
+
+\begin{figure}[htbp] 
+  \begin{center}
+    \includegraphics[width=\textwidth]{PS2-f12.pdf}
+  \end{center}
+  \caption{Marginal Model Plot for Model 1}
+  \label{f:margin}
+\end{figure}
+
+The hypothesis is suported by the regression analysis, regardless of the violation of the OLS assumptions. The coefficient of income shows a statistically significant negative effect of income on their attitudes toward Obama. That basically means that the higher income one earns, the lower their feelings towards Obama, holding everything else constant. This fits the expectation that is stated in the hypothesis. Nevertheless, as shown in the diagnoses, the residual is not normally distributed, which implies some problem to the OLS estimate.
+
+\item Suppose we think Democrats' feelings toward Obama will be less influenced by their incomes than others' feelings are.  Is there support for this conditional hypothesis?  How do you know?\\
+
+<<label=Answer2>>=
+m2<-lm(obama~income+age+educ+female+black+rep+dem+dem:income, data=obama)
+summary(m2)
+library(effects)
+m2.effects<-allEffects(m2)
+#summary(m2.effects)
+
+plot(allEffects(m2))
+@
+
+<<label=f21, echo=FALSE, results=tex, fig = TRUE, include=F>>=
+plot(effect(term="income:dem", mod=m2, default.levels=2), multiline=TRUE)
+@
+\begin{figure}[htbp] 
+  \begin{center}
+    \includegraphics[width=\textwidth]{PS2-f21.pdf}
+  \end{center}
+  \caption{The Conditional Effect of Partisanship on Income-Attitude Relationship}
+  \label{f:incomedem}
+\end{figure}
+
+
+
+The conditional hypothesis is supported by the data. From the graph produced from the above codes, we see that the slop for democrats' line is much flat than that for non-democrats'line. This implies the difference of the effects of income on respondents' feeling towards Obama is smaller for democrats than non-democrats.
+
+\item Does income have a statistically significant effect on the feelings toward Obama of those who aren't Democrats?  On the feelings of Democrats?  Report the estimated effect and $p$-value for each.\\
+
+<<label=Answer3>>=
+#Using the code shown by Fred
+obama$no.dem<-ifelse(obama$dem==1, 0, 1)
+table(obama$no.dem)
+m2.1<-lm(obama~income+age+educ+female+black+rep+no.dem+no.dem:income, data=obama)
+summary(m2.1)
+
+#The way we initially structured this problem
+obama.dem<-subset(obama, dem==1)
+obama.nodem<-subset(obama, dem==0)
+m1.2<-lm(obama~income+age+educ+female+black, data=obama.dem)
+m1.3<-lm(obama~income+age+educ+female+black+rep, data=obama.nodem)
+summary(m1.2)
+summary(m1.3)
+@
+Yes for non-democrats, but no for democrats.
+<<echo=FALSE,results=tex>>=
+require(xtable)
+print(xtable(summary(m1.2)$coefficients[, c(1,4)], #only shows the coefficient and p-values
+             caption="Democrats' Attitutde towards Obama"), 
+      latex.environments=("center")) 
+print(xtable(summary(m1.3)$coefficients[, c(1,4)], 
+             caption="Non-democrats' Attitutde towards Obama"),
+      latex.environments=("center"))
+@
+
+
+
+\item Suppose we were really more interested in how being a Democrat affects feelings towards Obama.  What effect does income have on this effect?  Graph your answer and insert the graph in your \LaTeX~file.\\
+
+<<label=Answer4>>=
+#Simulation
+ipak <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        install.packages(new.pkg, dependencies = TRUE)
+    sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("ggplot2", "RCurl", "arm")
+ipak(packages)
+
+set.seed(324)
+n.sims=10000
+m2.sims <- sim(m2, n.sims)
+apply(m2.sims@coef, 2, mean)
+display(m2)
+
+coef.dem <- data.frame(fake_income = seq(min(obama$income, na.rm=T), 
+                                         max(obama$income, na.rm=T), 
+                        length.out=100), coef_dem = NA, ub_dem = NA, lb_dem = NA) 
+
+for(i in 1:100) {   
+    coef.dem$coef_dem[i] <- mean(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9])
+    coef.dem$ub_dem[i] <- quantile(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9], .975)
+    coef.dem$lb_dem[i] <- quantile(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9], .025)    
+} 
+
+dem.coef.plot <- ggplot(coef.dem, aes(x = fake_income, y = coef_dem)) + 
+    geom_line() + geom_ribbon(aes(ymin=lb_dem, ymax=ub_dem), alpha=.5) +
+    xlab("Income") + ylab("Coefficient for Democrats") +
+    scale_x_continuous(limits=c(0,80))
+@
+<<label=f41, fig = TRUE, include=F>>=
+dem.coef.plot
+#This graph shows the conditional effect that income has Democrats' support for Obama.
+@
+In the following graph we see that along with the increase of income the coefficient for democrats increase. From here we may imply a catalyst effect of income on Democrats' support for Obama.
+
+\begin{figure}[htbp] 
+  \begin{center}
+    \includegraphics[width=\textwidth]{PS2-f41.pdf}
+  \end{center}
+  \caption{The Conditional Effect of Income on Partisanship-Attitude Relationship}
+  \label{f:demincome}
+\end{figure}
+
+\end{enumerate}
+\end{document}

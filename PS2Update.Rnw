@@ -26,14 +26,9 @@ data.key
 
 <<label=Answer1>>=
 # Data management
-table(obama$obama)
-table(obama$income) #There's a gap from around 140 to 250
-table(obama$age)
-table(obama$educ)
-table(obama$female)
-table(obama$black)
-table(obama$dem)
-table(obama$rep)
+list<-data.frame(obama$obama,obama$income,obama$age,obama$educ,obama$female,
+                 obama$black,obama$dem,obama$rep)
+lapply(list, table) #There's a gap from around 140 to 250
 cor.test(obama$dem, obama$rep, method=c("pearson", "kendall", "spearman")) 
 #There is a significant correlation between these two variables, which indicates that there may be a potential problem of multicollinearity.  This is an issue that we will have to keep in mind as we continue analyzing this data set.
 

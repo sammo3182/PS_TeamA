@@ -108,12 +108,17 @@ The conditional hypothesis is supported by the data. From the graph produced fro
 
 <<label=Answer3>>=
 #Using the code shown by Fred
-obama$no.dem<-ifelse(obama$dem==1, 0, 1)
+###obama$no.dem<-ifelse(obama$dem==1, 0, 1)
+obama$no.dem<-1-obama$dem
+###Alternative to do that
+with(obama, no.dem<-1-dem)  #with is used to replace some values in the existing data frame
 table(obama$no.dem)
+
 m2.1<-lm(obama~income+age+educ+female+black+rep+no.dem+no.dem:income, data=obama)
 summary(m2.1)
 
 #The way we initially structured this problem
+## Splitting a sample is equivalent to use an interaction term only when the data of the other variables are the same. (SO, more use for avoiding three-way interaction)
 obama.dem<-subset(obama, dem==1)
 obama.nodem<-subset(obama, dem==0)
 m1.2<-lm(obama~income+age+educ+female+black, data=obama.dem)
@@ -130,7 +135,11 @@ print(xtable(summary(m1.2)$coefficients[, c(1,4)], #only shows the coefficient a
 print(xtable(summary(m1.3)$coefficients[, c(1,4)], 
              caption="Non-democrats' Attitutde towards Obama"),
       latex.environments=("center"))
-@
+## Show the differences of dem vs. independent party and rep vs. independent party on the effect of income
+m3<-lm(obama~income+age+educ+female+black+rep+dem+dem:income+rep:income, data=obama)
+summary(m3)
+
+#Note: (when income:dem is significant, it shows that there is a significant difference between the effect of dem and independent part on the relationship between income and obama)
 
 
 
@@ -155,22 +164,64 @@ apply(m2.sims@coef, 2, mean)
 display(m2)
 
 coef.dem <- data.frame(fake_income = seq(min(obama$income, na.rm=T), 
-                                         max(obama$income, na.rm=T), 
-                        length.out=100), coef_dem = NA, ub_dem = NA, lb_dem = NA) 
+                                         max(obama$income, na.rm=T),
+                                         length.out=100), 
+                       coef_dem = NA, ub_dem = NA, lb_dem = NA) 
 
 for(i in 1:100) {   
     coef.dem$coef_dem[i] <- mean(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9])
     coef.dem$ub_dem[i] <- quantile(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9], .975)
     coef.dem$lb_dem[i] <- quantile(m2.sims@coef[,8] + coef.dem$fake_income[i]*m2.sims@coef[,9], .025)    
-} 
+}   #so if there is another interaction, just plus the coefficient of that one in. Do partial deriviative by hand to ensure which coefficient is added.
 
 dem.coef.plot <- ggplot(coef.dem, aes(x = fake_income, y = coef_dem)) + 
     geom_line() + geom_ribbon(aes(ymin=lb_dem, ymax=ub_dem), alpha=.5) +
     xlab("Income") + ylab("Coefficient for Democrats") +
     scale_x_continuous(limits=c(0,80))
+
+
+##############Make a function to do the above more easily in future.
+inter.plot<-function(m, data, var1, var2, seed=324, sims=1000, steps=100){ #"m"equals "m=NULL" as default argument for the model
+                    require(arm)
+                    set.seed(seed)
+                    m2.sims <- sim(m, sims)
+                    var12<-paste0(var2,":",var1)  #paste take strings and make it to a longer string
+                    coef.dem <- data.frame(fake= seq(min(m$model[var2], na.rm=T), 
+                                         max(m$model[var2], na.rm=T),
+                                         length.out=steps), 
+                       coef1 = NA, ub = NA, lb = NA) 
+
+for(i in 1:100) {   
+    coef$coef[i] <- mean(m.sims@coef[var1] + coef$fake[i]*m.sims@coef[var12])
+    coef$ub[i] <- quantile(m.sims@coef[var1] + coef$fake[i]*m.sims@coef[var12], .975, na.rm=T)
+    coef$lb[i] <- quantile(m.sims@coef[var1] + coef$fake[i]*m.sims@coef[var12], .025, na.rm=T)    
+}   #so if there is another interaction, just plus the coefficient of that one in. Do partial deriviative by hand to ensure which coefficient is added.
+
+coef.plot <- ggplot(coef.dem, aes(x = fake, y = coef)) + 
+    geom_line() + geom_ribbon(aes(ymin=lb, ymax=ub), alpha=.5)
+
+return(coef.plot)
+}
+
+
+##Debug
+m<- m2
+var1<-"income"
+var2<-"income"
+var1<-"dem"
+seed<-324
+sims<-1000
+steps<-100
+m.sims<-sim(m, sims)
+var12<-paste0(var2,":",var1)
+summary(m.sims)
+m.sims<-(m2,sims)
+#################################################################################################################
+
 @
 <<label=f41, fig = TRUE, include=F>>=
 dem.coef.plot
+inter.plot(m=m2, var1="dem", var2="income")
 #This graph shows the conditional effect that income has Democrats' support for Obama.
 @
 In the following graph we see that along with the increase of income the coefficient for democrats increase. From here we may imply a catalyst effect of income on Democrats' support for Obama.

@@ -1,0 +1,344 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage}
+
+\usepackage{graphicx}    	% Enable graphics commands
+\usepackage{lscape}		% Enable landscape with \begin{landscape} until \end{landscape}
+\usepackage{natbib}			% Enable citation commands \citep{}, \citet{}, etc.
+\bibpunct{(}{)}{;}{a}{}{,}		% Formatting for in-text citations
+\usepackage{setspace}		% Enable double-spacing with \begin{spacing}{2} until \end{spacing}.
+\usepackage[utf8]{inputenc} 	% Enable utf8 characters, i.e., accents without coding--just type them in.
+\usepackage[english]{babel}	% English hyphenation and alphabetization.  Other languages available.
+\usepackage{dcolumn}        % For decimal-aligned stargazer output.
+\usepackage[colorlinks=true, urlcolor=blue, citecolor=black, linkcolor=black]{hyperref} % Include hyperlinks with the \url and \href commands.
+\usepackage[capitalise]{cleveref}
+\setlength{\tabcolsep}{1pt}	% Make tables slightly narrower by reducing space between columns.
+\renewcommand\floatpagefraction{.9}	% These commands allow larger tables and graphics to fit
+\renewcommand\topfraction{.9}		% on a page when default settings would complain.
+\renewcommand\bottomfraction{.9}
+\renewcommand\textfraction{.1}
+\setcounter{totalnumber}{50}
+\setcounter{topnumber}{50}
+\setcounter{bottomnumber}{50}
+
+\newcommand{\R}{\textsf{R}~}        %This creates the command \R to typeset the name R correctly.
+
+%\usepackage[left=1in, right=1in]{geometry}	%Turn footnotes into endnotes (commented out).
+%\renewcommand{\footnotesize}{\normalsize}	
+%\usepackage{endnotes}
+%\renewcommand{\footnote}{\endnote}
+%\renewcommand{\section}{\subsection}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\pagestyle{empty}
+
+\begin{center}
+{\Large \textbf{POLI 5003: Problem Set \# 1, Team A}}
+\end{center}
+
+The \emph{Partido Revolucionario Institucional} (PRI) maintained authoritarian rule over Mexico for more than seventy years, from the end of the Mexican Revolution until after the July 2000 elections.  The dataset accompanying this assignment (\texttt{mex2000.dta}) is drawn from a survey conducted during that electoral campaign.  You will use it to examine the predictors of Mexicans' attitudes towards the PRI and its opponents at that critical time in the country's history. 
+
+<<label=Setup>>=
+# Setup
+require(foreign)
+mex <- read.dta("mex2000.dta")
+var.labels <- attr(mex,"var.labels")
+data.key <- data.frame(var.name=names(mex),var.labels)
+data.key
+@
+
+\begin{enumerate}
+
+\item During its long rule, the PRI worked to present itself as the party of all Mexicans and was therefore something of an ideological chameleon.  Nevertheless, we might hypothesize that people who leaned more to the right would hold more favorable views of this authoritarian party (Americanists may recall V.O. Key's writings about the one-party South), and suppose we want to control for their assessments of the recent performance of the national economy as well as of their personal characteristics.  Is this ideology hypothesis supported by a regression of \texttt{PRIfeel} using Empirical Bayes and the other default settings of MCMCpack?  How do you know?  Describe the estimated effect of ideology on attitudes toward the PRI.  \\
+
+<<label=Answer1>>=
+require(MCMCpack)
+
+#Check the data, which do not include any irrelevant values that need to be manipulated before the MCMC
+list<-subset(mex,select=c(1, 6:13))
+lapply(list, table)  
+##Get a general sense of the relationships between Y and Xs. Because of using a using default regression prior, the result of MCMC should be similar as the results given by the classical regression.
+m1.reg<-lm(PRIfeel~rightide+econnat+female+ses+churchatt, data=mex)
+summary(m1.reg)
+
+m1.mc<-MCMCregress(PRIfeel~rightide+econnat+female+ses+churchatt, 
+            data = mex, burnin = 1000, mcmc = 10000,
+            thin = 1, verbose = 0, seed = 3182, 
+            marginal.likelihood = "none")
+summary(m1.mc)
+
+@
+<<label=f1, echo=FALSE, results=tex, fig = TRUE, include=F>>=
+plot(m1.mc, trace=F)
+@
+
+\begin{figure}[htbp] 
+  \begin{center}
+    \includegraphics[width=\textwidth]{PS3-f1.pdf}
+  \end{center}
+  \caption{Density of Each Independent Variables by MCMC}
+  \label{f:f1}
+\end{figure}
+
+The ideology hypothesis is held. As shown in \cref{f:f1}, the 95\% HDI of the density of the variable for ideology does not cover 0, which implies that we have 95\% credit to believe that the effect of the ideology on the feeling towards PRI is more than 0 and in a positive way (by .281, exactly).
+
+
+<<label=NotRequireButCurisity>>=
+mean(mex$PRIfeel)
+m1.mc.1<-MCMCregress(PRIfeel~rightide+econpers+econnat+female+ses+churchatt, 
+            data = mex, burnin = 1000, mcmc = 10000,
+            thin = 1, verbose = 0, seed = 3182, 
+             b0 = 0, B0 = 0.5, c0 = 2, d0 = 5.544,   # a weakly informative prior, a mean equal to the marginal variance of PRIfeel
+            marginal.likelihood = "Chib95")
+summary(m1.mc.1)
+
+m1.mc.2<-MCMCregress(PRIfeel~rightide+econpers+econnat+female+ses+churchatt, 
+            data = mex, burnin = 1000, mcmc = 10000,
+            thin = 1, verbose = 0, seed = 3182, 
+             b0 = 0, B0 = 0.1, c0 = 2, d0 = 5.544,   # a weakly informative prior, a mean equal to the marginal variance of PRIfeel
+            marginal.likelihood = "Chib95")
+summary(m1.mc.2)
+
+BF<-BayesFactor(m1.mc.1, m1.mc.2)
+
+summary(BF)
+@
+
+
+\item Suppose the literature further suggests that the effect of ideology on respondents' feelings about the PRI would be weaker among those who held more positive assessments of the national economy's recent performance.  Assess this conditional hypothesis using Empirical Bayes and the other default settings of MCMCpack.  \\
+
+<<label=Answer2>>=
+m2.mc<-MCMCregress(PRIfeel~rightide+econnat+female+ses+churchatt+rightide:econnat, 
+            data = mex, burnin = 1000, mcmc = 10000,
+            thin = 1, verbose = 0, seed = 3182, 
+            marginal.likelihood = "none")
+summary(m2.mc)
+
+@
+As seen in the result, the conditional variable of attitude towards national economy has a significant effect on the ideology variable.
+
+\item Suppose a ``helpful'' reviewer points out that Empirical Bayes imposes a very strong set of priors, and that noninformative priors may yield a different result.  Going well beyond the call of duty, this reviewer even offers some code for you to study and then try out.  Is the reviewer correct that your conclusions regarding the conditional hypothesis change with a different prior?  \\
+
+<<label=Answer3>>=
+require(rstan)
+
+# First we have to define the model
+PRIfeel.code <- '
+    data {
+        int<lower=0> N;
+        vector[N] PRIfeel;
+        vector[N] rightide;
+        vector[N] econnat;
+        vector[N] female;
+        vector[N] ses;
+        vector[N] churchatt;
+    }
+    transformed data {
+        vector[N] rightideXeconnat;
+        rightideXeconnat <- rightide .* econnat;
+    }
+    parameters {                
+        real beta1;             // coef for constant (default prior is uniform, i.e., noninformative)
+        real beta2;             
+        real beta3;
+        real beta4;
+        real beta5;
+        real beta6;
+        real beta7;
+        real<lower=0> sigma;
+    }
+    model {
+        PRIfeel ~ normal(beta1 + beta2 * rightide + beta3 * econnat +
+                             beta4 * female + beta5 * ses +
+                             beta6 * churchatt + beta7 * rightideXeconnat, sigma);
+    }
+'
+
+# Then put the data into the expected format
+mex.data <- list(N = nrow(mex), PRIfeel = mex$PRIfeel, rightide = mex$rightide,
+                   econnat = mex$econnat, female = mex$female, 
+                   ses = mex$ses, churchatt = mex$churchatt)
+
+# Now we can run it
+require(rstan)
+set.seed(324)
+m1.stan <- stan(model_code = PRIfeel.code, data = mex.data, 
+                iter = 1000, chains = 3)
+
+print(m1.stan)
+m1.stan.sim <- as.data.frame(m1.stan)
+
+HDI.posterior <- function(data = NULL, mass = .95) {
+    n.vars <- dim(data)[2]-2
+    results.HDI <- matrix(rep(NA,3*n.vars), nrow=n.vars, ncol=3)
+    for (var in 1:n.vars) {
+        post <- data[,var]
+        sorted.post <- sort(post)
+        ci.idx <- floor(mass * length(sorted.post))
+        n.ci <- length(sorted.post) - ci.idx
+        ci.width <- rep(0, n.ci)
+        for (i in 1:n.ci) {
+            ci.width[i] <- sorted.post[i+ci.idx] - sorted.post[i]
+        }
+        HDI.min <- sorted.post[which.min(ci.width)]
+        HDI.max <- sorted.post[which.min(ci.width)+ci.idx]
+        mean.post <- mean(post)
+        results.HDI[var,] <- c(mean.post, HDI.min, HDI.max)
+    }  
+    results.HDI <- as.data.frame(results.HDI)
+    names(results.HDI) <- c("b", "lb", "ub")
+    return(results.HDI)
+}
+
+HDI.posterior(data=m1.stan.sim)
+@
+No, there's no significant changes in the effect of each variable is changed, according to the turnout.
+
+\item Assess the original, unconditional hypothesis using noninformative priors.  Include a graph of the posterior distribution for the effect of ideology on feelings toward the PRI.  Also graph the highest density intervals of the posteriors of the effects of all variables in the model, remembering to standardize the continuous variables by dividing them by twice their standard deviations. 
+
+<<label=Answer4>>=
+# First we have to define the model
+PRIfeel.code <- '
+    data {
+        int<lower=0> N;
+        vector[N] PRIfeel;
+        vector[N] rightide;
+        vector[N] econnat;
+        vector[N] female;
+        vector[N] ses;
+        vector[N] churchatt;
+    }
+    transformed data {
+        vector[N] rightideXeconnat;
+        rightideXeconnat <- rightide .* econnat;
+    }
+    parameters {                
+        real beta1; 
+        real beta2;             
+        real beta3;
+        real beta4;
+        real beta5;
+        real beta6;
+        real<lower=0> sigma;
+    }
+    model {
+        PRIfeel ~ normal(beta1 + beta2 * rightide + beta3 * econnat +
+                             beta4 * female + beta5 * ses +
+                             beta6 * churchatt, sigma);
+    }
+'
+
+# Then put the data into the expected format
+mex.data <- list(N = nrow(mex), PRIfeel = mex$PRIfeel, rightide = mex$rightide,
+                   econnat = mex$econnat, female = mex$female, 
+                   ses = mex$ses, churchatt = mex$churchatt)
+
+# Now we can run it
+require(rstan)
+set.seed(324)
+m2.stan <- stan(model_code = PRIfeel.code, data = mex.data, 
+                iter = 1000, chains = 3)
+
+print(m2.stan)
+m2.stan.sim <- as.data.frame(m2.stan)
+@
+
+<<label=f3, echo=F, fig=T, include=F, width=6, height = 6>>=
+#a graph of the posterior distribution for the effect of ideology on feelings toward the PRI.
+require(ggplot2)
+b.ideo.plot <- qplot(m2.stan.sim$beta2, geom="density") + 
+    xlab("Coefficient of Ideology") + 
+    ylab("Density of Posterior Distribution") +
+    theme_bw()
+
+b.ideo.plot
+@
+
+
+<<label=f4, echo=F, fig=T, include=F, width=6, height = 6>>=
+mex2 <- mex
+
+# Standardize continuous IVs by dividing by 2 s.d.s (per Gelman (2008))
+for (iv in c(6,8,11:13)) {
+    mex2[,iv] <- mex2[,iv]/(2*sd(mex2[,iv])) #standardize data make codes running faster
+}
+
+mex2.data <- list(N = nrow(mex2), PRIfeel = mex2$PRIfeel, rightide = mex2$rightide,
+                     econnat = mex2$econnat, female = mex2$female, 
+                     ses = mex2$ses, churchatt = mex2$churchatt)
+
+set.seed(3182)
+m2.stan2 <- stan(fit=m2.stan, data=mex2.data, iter = 1000, chains = 3)
+m2.stan2.sim <- as.data.frame(m2.stan2)
+#when not change the model, we don't need to recompile it. Use "fit=m1.stan" means use the same model and results.)
+
+HDI.posterior <- function(data = NULL, mass = .95) {
+    n.vars <- dim(data)[2]-2
+    results.HDI <- matrix(rep(NA,3*n.vars), nrow=n.vars, ncol=3)
+    for (var in 1:n.vars) {
+        post <- data[,var]
+        sorted.post <- sort(post)
+        ci.idx <- floor(mass * length(sorted.post))
+        n.ci <- length(sorted.post) - ci.idx
+        ci.width <- rep(0, n.ci)
+        for (i in 1:n.ci) {
+            ci.width[i] <- sorted.post[i+ci.idx] - sorted.post[i]
+        }
+        HDI.min <- sorted.post[which.min(ci.width)]
+        HDI.max <- sorted.post[which.min(ci.width)+ci.idx]
+        mean.post <- mean(post)
+        results.HDI[var,] <- c(mean.post, HDI.min, HDI.max)
+    }  
+    results.HDI <- as.data.frame(results.HDI)
+    names(results.HDI) <- c("b", "lb", "ub")
+    return(results.HDI)
+}
+
+HDI.posterior(data=m2.stan.sim)
+
+reg.results <- HDI.posterior(m2.stan.sim)   
+reg.results <- reg.results[-1,]             # exclude constant (not interesting)
+reg.results$no <- 1:dim(reg.results)[1]     # an index to order the variables
+reg.results$var <- c("Political ideology",
+                     "View of national economic sit.", "Gender","Socioeconomic status",
+                     "Church attendance") # variable names
+
+reg.plot <- ggplot(data = reg.results, aes(y = no, x = b)) +
+    geom_point() + geom_errorbarh(aes(xmin = lb, xmax = ub, height=0)) +
+    ylab("") + xlab("") + theme_bw() + 
+    scale_y_reverse(breaks = 1:dim(reg.results)[1], 
+                    labels = reg.results[1:dim(reg.results)[1],"var"]) +
+    geom_vline(xintercept=c(0), linetype="dotted")
+
+reg.plot
+
+@
+\begin{figure}[htbp] 
+  \caption{Posterior Distribution of the Effect of Ideology}
+  \label{F:postide}
+  \begin{center}
+    \includegraphics[width=5.25in]{PS3-f3.pdf}
+  \end{center}
+\end{figure}
+
+\begin{figure}[htbp] 
+  \caption{Posterior Distribution of the Effect of Ideology}
+  \label{F:postide}
+  \begin{center}
+    \includegraphics[width=5.25in]{PS3-f4.pdf}
+  \end{center}
+  \begin{footnotesize}
+  \begin{tabular}{p{.4in} p{4.75in}}
+  & \emph{Note}: Continuous variables rescaled by dividing by twice their standard deviations per \citet{Gelman2008}.
+  \end{tabular}
+  \end{footnotesize}
+\end{figure}
+
+
+
+\bibliographystyle{ajps}
+\bibliography{PS3Library}
+
+\end{enumerate}
+\end{document}

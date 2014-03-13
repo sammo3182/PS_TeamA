@@ -55,10 +55,10 @@ data.key
 <<label=Answer1>>=
 require(MCMCpack)
 
-#Check the data, which do not include any irrelevant values that need to be manipulated before the MCMC
+#We checked the data, which does not include any irrelevant variables that need to be manipulated before running the MCMC.
 list<-subset(mex,select=c(1, 6:13))
 lapply(list, table)  
-##Get a general sense of the relationships between Y and Xs. Because of using a using default regression prior, the result of MCMC should be similar as the results given by the classical regression.
+##We ran this code to get a general sense of the relationships between the variables.  Because we are using a default regression prior, the result of the MCMC should be similar to the results given by the classical regression.
 m1.reg<-lm(PRIfeel~rightide+econnat+female+ses+churchatt, data=mex)
 summary(m1.reg)
 
@@ -96,7 +96,7 @@ summary(m1.mc.1)
 m1.mc.2<-MCMCregress(PRIfeel~rightide+econpers+econnat+female+ses+churchatt, 
             data = mex, burnin = 1000, mcmc = 10000,
             thin = 1, verbose = 0, seed = 3182, 
-             b0 = 0, B0 = 0.1, c0 = 2, d0 = 5.544,   # a weakly informative prior, a mean equal to the marginal variance of PRIfeel
+             b0 = 0, B0 = 0.1, c0 = 2, d0 = 5.544,   # A weakly informative prior, with a mean that is equal to the marginal variance of PRIfeel
             marginal.likelihood = "Chib95")
 summary(m1.mc.2)
 
@@ -116,7 +116,7 @@ m2.mc<-MCMCregress(PRIfeel~rightide+econnat+female+ses+churchatt+rightide:econna
 summary(m2.mc)
 
 @
-As seen in the result, the conditional variable of attitude towards national economy has a significant effect on the ideology variable.
+As seen in the results, the conditional variable for the attitude towards the national economy has a significant effect on the ideology variable.
 
 \item Suppose a ``helpful'' reviewer points out that Empirical Bayes imposes a very strong set of priors, and that noninformative priors may yield a different result.  Going well beyond the call of duty, this reviewer even offers some code for you to study and then try out.  Is the reviewer correct that your conclusions regarding the conditional hypothesis change with a different prior?  \\
 

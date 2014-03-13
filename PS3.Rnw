@@ -162,7 +162,7 @@ mex.data <- list(N = nrow(mex), PRIfeel = mex$PRIfeel, rightide = mex$rightide,
 
 # Now we can run it
 require(rstan)
-set.seed(324)
+set.seed(3182)
 m1.stan <- stan(model_code = PRIfeel.code, data = mex.data, 
                 iter = 1000, chains = 3)
 
@@ -236,27 +236,13 @@ mex.data <- list(N = nrow(mex), PRIfeel = mex$PRIfeel, rightide = mex$rightide,
 
 # Now we can run it
 require(rstan)
-set.seed(324)
+set.seed(3182)
 m2.stan <- stan(model_code = PRIfeel.code, data = mex.data, 
                 iter = 1000, chains = 3)
 
 print(m2.stan)
 m2.stan.sim <- as.data.frame(m2.stan)
-@
 
-<<label=f3, echo=F, fig=T, include=F, width=6, height = 6>>=
-#a graph of the posterior distribution for the effect of ideology on feelings toward the PRI.
-require(ggplot2)
-b.ideo.plot <- qplot(m2.stan.sim$beta2, geom="density") + 
-    xlab("Coefficient of Ideology") + 
-    ylab("Density of Posterior Distribution") +
-    theme_bw()
-
-b.ideo.plot
-@
-
-
-<<label=f4, echo=F, fig=T, include=F, width=6, height = 6>>=
 mex2 <- mex
 
 # Standardize continuous IVs by dividing by 2 s.d.s (per Gelman (2008))
@@ -272,6 +258,22 @@ set.seed(3182)
 m2.stan2 <- stan(fit=m2.stan, data=mex2.data, iter = 1000, chains = 3)
 m2.stan2.sim <- as.data.frame(m2.stan2)
 #when not change the model, we don't need to recompile it. Use "fit=m1.stan" means use the same model and results.)
+
+@
+
+<<label=f3, echo=F, fig=T, include=F, width=6, height = 6>>=
+#a graph of the posterior distribution for the effect of ideology on feelings toward the PRI.
+require(ggplot2)
+b.ideo.plot <- qplot(m2.stan2.sim$beta2, geom="density") + 
+    xlab("Coefficient of Ideology") + 
+    ylab("Density of Posterior Distribution") +
+    theme_bw()
+
+b.ideo.plot
+@
+
+
+<<label=f4, echo=F, fig=T, include=F, width=6, height = 6>>=
 
 HDI.posterior <- function(data = NULL, mass = .95) {
     n.vars <- dim(data)[2]-2
@@ -295,9 +297,9 @@ HDI.posterior <- function(data = NULL, mass = .95) {
     return(results.HDI)
 }
 
-HDI.posterior(data=m2.stan.sim)
+HDI.posterior(data=m2.stan2.sim)
 
-reg.results <- HDI.posterior(m2.stan.sim)   
+reg.results <- HDI.posterior(m2.stan2.sim)   
 reg.results <- reg.results[-1,]             # exclude constant (not interesting)
 reg.results$no <- 1:dim(reg.results)[1]     # an index to order the variables
 reg.results$var <- c("Political ideology",

@@ -34,7 +34,7 @@
 \pagestyle{empty}
 
 \begin{center}
-{\Large \textbf{POLI 5003: Problem Set \# 1, Team A}}
+{\Large \textbf{POLI 5003: Problem Set \# 3, Team A}}
 \end{center}
 
 The \emph{Partido Revolucionario Institucional} (PRI) maintained authoritarian rule over Mexico for more than seventy years, from the end of the Mexican Revolution until after the July 2000 elections.  The dataset accompanying this assignment (\texttt{mex2000.dta}) is drawn from a survey conducted during that electoral campaign.  You will use it to examine the predictors of Mexicans' attitudes towards the PRI and its opponents at that critical time in the country's history. 

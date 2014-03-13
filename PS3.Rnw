@@ -116,7 +116,7 @@ m2.mc<-MCMCregress(PRIfeel~rightide+econnat+female+ses+churchatt+rightide:econna
 summary(m2.mc)
 
 @
-As seen in the results, the conditional variable for the attitude towards the national economy has a significant effect on the ideology variable.
+As seen in the results, the conditional variable for the attitude towards the national economy does not have a significant effect on the ideology variable (-0.034927,0.003974).
 
 \item Suppose a ``helpful'' reviewer points out that Empirical Bayes imposes a very strong set of priors, and that noninformative priors may yield a different result.  Going well beyond the call of duty, this reviewer even offers some code for you to study and then try out.  Is the reviewer correct that your conclusions regarding the conditional hypothesis change with a different prior?  \\
 
